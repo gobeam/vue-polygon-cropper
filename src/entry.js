@@ -3,7 +3,7 @@ import component from "./PolygonCropper.vue";
 function install(Vue) {
 	if (install.installed) return;
 	install.installed = true;
-	Vue.component("SimpleAlert", component);
+	Vue.component("PolygonCrop", component);
 }
 
 const plugin = {
