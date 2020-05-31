@@ -9,7 +9,7 @@
                 v-show="condition"
                 width="1190"
         ></canvas>
-        <span class="crop-pointer" v-for="point in current_pointer" :style="{top:point.y, left:point.x}"></span>
+        <span class="vue-crop-pointer" v-for="point in current_pointer" :style="{top:point.y, left:point.x}"></span>
         <!--          <i>HERE APPEARS THE UPLOADED IMAGE</i>-->
         <div ref="resultImage"></div>
 
@@ -48,9 +48,9 @@
 				imageCanvas: null,
 				redo_list: [],
 				undo_list: [],
-                redo_pointer: [],
-                undo_pointer: [],
-                current_pointer: [],
+				redo_pointer: [],
+				undo_pointer: [],
+				current_pointer: [],
 			};
 		},
 		mounted() {
@@ -73,17 +73,28 @@
 				img.src = this.imageSource;
 				this.imageObj = img;
 			},
-            savePointer: function(point, redo) {
-	            redo = redo || false;
-	            if (!redo) {
-	            	this.redo_pointer = []
-                }
-	            this.current_pointer.push(point);
-	            this.undo_pointer.push(point);
-            },
-            restorePointer: function() {
-
-            },
+			savePointer: function (point) {
+				this.redo_pointer = [];
+				this.current_pointer.push(point);
+				this.undo_pointer.push(point);
+			},
+			restorePointer: function (pop, push, undo) {
+				if (pop.length > 0) {
+					let item = pop.pop();
+					push.push(item);
+					if (undo) {
+						this.oldPositionX = item.positionX;
+						this.oldPositionY = item.positionY;
+						this.current_pointer.pop();
+					} else {
+						if (this.redo_pointer.length > 0) {
+							this.oldPositionX = this.redo_pointer[this.redo_pointer.length - 1]['positionX'];
+							this.oldPositionY = this.redo_pointer[this.redo_pointer.length - 1]['positionY'];
+						}
+						this.current_pointer.push(item);
+					}
+				}
+			},
 			saveState: function (canvas, list, keep_redo) {
 				keep_redo = keep_redo || false;
 				if (!keep_redo) {
@@ -105,9 +116,11 @@
 			},
 			undo: function () {
 				this.restoreState(this.undo_list, this.redo_list);
+				this.restorePointer(this.undo_pointer, this.redo_pointer, true);
 			},
 			redo: function () {
 				this.restoreState(this.redo_list, this.undo_list);
+				this.restorePointer(this.redo_pointer, this.undo_pointer, false);
 			},
 			crop: function () {
 				this.condition = 0;
@@ -146,22 +159,9 @@
 				this.$refs.resultImage.innerHTML = `<img src="${dataUrl}"/>`;
 			},
 			mouseUp: function (e) {
-
 			},
 			mouseDown: function (e) {
 				if (this.condition === 1) {
-					let wrapperRef = this.$refs.wrapper;
-					// let pointer = document.createElement("span");
-					// pointer.classList.add("vue-crop-pointer");
-					// pointer.style.border = 'solid 1px #000';
-					// pointer.style.filter = 'alpha(opacity=50)';
-					// pointer.style.opacity = '0.5';
-					// pointer.style.position = 'absolute';
-					// pointer.style.width = '5px';
-					// pointer.style.height = '5px';
-					// pointer.style.top = e.pageY + 'px';
-					// pointer.style.left = e.pageX + 'px';
-					this.savePointer({x: e.pageX + 'px', y: e.pageY + 'px'});
 					if (e.which === 1) {
 						//store the points on mousedown
 						this.points.push(e.pageX, e.pageY);
@@ -177,6 +177,13 @@
 							this.ctx.stroke();
 						}
 						this.saveState(this.imageCanvas);
+						this.savePointer({
+							x: e.pageX + 'px',
+							y: e.pageY + 'px',
+							positionX: e.offsetX,
+							positionY: e.offsetY
+						});
+
 						this.oldPositionX = e.offsetX;
 						this.oldPositionY = e.offsetY;
 					}
@@ -186,6 +193,7 @@
 				}
 			},
 			mouseMove: function (e) {
+				// console.log(e.offsetX, e.offsetY)
 				if (this.condition === 1) {
 					this.positionX = e.offsetX;
 					this.positionY = e.offsetY;
@@ -257,12 +265,13 @@
         /*max-width: 100vw;*/
         /*min-width: 500px;*/
     }
-    .crop-pointer {
-        border : solid 1px #000;
-        filter : alpha(opacity=50);
-        opacity : 0.5;
-        position : absolute;
-        width : 5px;
-        height : 5px;
+
+    .vue-crop-pointer {
+        border: solid 1px #000;
+        filter: alpha(opacity=50);
+        opacity: 0.5;
+        position: absolute;
+        width: 5px;
+        height: 5px;
     }
 </style>
