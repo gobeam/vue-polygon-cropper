@@ -1,5 +1,6 @@
 <template>
     <div ref="wrapper" class="wrapper">
+
         <canvas
                 ref="canvas"
                 style="position:relative;margin-left:0px;margin-top:0px;cursor:crosshair"
@@ -10,13 +11,15 @@
                 width="1190"
         ></canvas>
         <span class="vue-crop-pointer" v-for="point in current_pointer" :style="{top:point.y, left:point.x}"></span>
-        <!--          <i>HERE APPEARS THE UPLOADED IMAGE</i>-->
         <div ref="resultImage"></div>
-
         <button @click.prevent="crop">Crop</button>
         <button @click.prevent="undo">Undo</button>
         <button @click.prevent="redo">Redo</button>
-
+        <button @click.prevent="reset">Reset</button>
+        <button @click.prevent="rotate(-90)">Rotate Left</button>
+        <button @click.prevent="rotate(90)">Rotate right</button>
+        <button @click.prevent="flip(true, false)">Flip H</button>
+        <button @click.prevent="flip(false, true)">Flip V</button>
     </div>
 </template>
 <script>
@@ -72,6 +75,37 @@
 				// img.crossOrigin = "Anonymous";
 				img.src = this.imageSource;
 				this.imageObj = img;
+			},
+			reset() {
+				this.points = [];
+				this.redo_list = [];
+				this.undo_list = [];
+				this.redo_pointer = [];
+				this.undo_pointer = [];
+				this.current_pointer = [];
+				this.imageObj = null;
+				this.condition = 1
+				// this.ctx.clearRect(0, 0, this.width, this.height);
+				this._initialize()
+
+			},
+            rotate(angle) {
+	            this.ctx.clearRect(0,0,this.width,this.height);
+	            this.ctx.translate(this.width/2,this.height/2);
+	            this.ctx.rotate(2 * Math.PI *( angle/360))
+	            this.ctx.translate(-this.width/2,-this.height/2);
+	            this.ctx.drawImage(this.imageObj, 0, 0);
+            },
+			flip: function(flipH, flipV) {
+				let scaleH = flipH ? -1 : 1, // Set horizontal scale to -1 if flip horizontal
+					scaleV = flipV ? -1 : 1, // Set verical scale to -1 if flip vertical
+					posX = flipH ? this.width * -1 : 0, // Set x position to -100% if flip horizontal
+					posY = flipV ? this.height * -1 : 0; // Set y position to -100% if flip vertical
+
+				this.ctx.save(); // Save the current state
+				this.ctx.scale(scaleH, scaleV); // Set scale to flip the image
+				this.ctx.drawImage(this.imageObj, posX, posY, this.width, this.height); // draw the image
+				this.ctx.restore(); // Restore the last saved state
 			},
 			savePointer: function (point) {
 				this.redo_pointer = [];
