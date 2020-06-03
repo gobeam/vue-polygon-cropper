@@ -1,3 +1,3 @@
 module.exports = {
-	publicPath: '/vue-polygon-cropper/example/'
+	baseurl: '/vue-polygon-cropper/'
 };
