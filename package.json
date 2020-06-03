@@ -1,6 +1,7 @@
 {
   "name": "vue-polygon-cropper",
   "version": "0.1.0",
+  "homepage": "/vue-polygon-cropper/",
   "main": "dist/PolygonCropper.umd.js",
   "module": "dist/PolygonCropper.esm.js",
   "unpkg": "dist/PolygonCropper.min.js",
@@ -17,6 +18,28 @@
     "tags": "tags.json",
     "attributes": "attributes.json"
   },
+  "keywords": [
+    "image",
+    "polygon",
+    "crop",
+    "cropper",
+    "redo",
+    "undo",
+    "reset",
+    "cropper.js",
+    "cropping",
+    "processing",
+    "html",
+    "css",
+    "javascript",
+    "front-end",
+    "web"
+  ],
+  "author": {
+    "name": "Roshan Ranabhat",
+    "url": "https://roshanranabhat.com.np/"
+  },
+  "license": "MIT",
   "scripts": {
     "build": "npm run build:unpkg & npm run build:es & npm run build:umd",
     "build:umd": "cross-env NODE_ENV=production rollup --config build/rollup.config.js --format umd --file dist/PolygonCropper.umd.js",
