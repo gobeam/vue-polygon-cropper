@@ -2,11 +2,12 @@
     <div :class="wrapperClass">
         <canvas
                 :class="canvasClass"
+                :height="canvasHeight"
+                :width="canvasWidth"
                 ref="canvas"
                 v-on:mousedown="mouseDown"
                 v-on:mousemove="mouseMove"
                 v-show="showCanvas"
-                width="1190"
         ></canvas>
         <span :class="`vue-crop-pointer ${pointerClass}`" :style="{top:point.y, left:point.x}"
               v-for="point in current_pointer" v-show="showPointer"></span>
@@ -19,6 +20,14 @@
 			canvasClass: {
 				type: String,
 				default: ""
+			},
+			canvasWidth: {
+				type: Number,
+				default: 400
+			},
+			canvasHeight: {
+				type: Number,
+				default: 600
 			},
 			wrapperClass: {
 				type: String,
@@ -75,18 +84,27 @@
 					this.height = img.height;
 					this.ctx.canvas.width = img.width;
 					this.ctx.canvas.height = img.height;
-					this.ctx.drawImage(img, 0, 0);
+					this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, this.canvasWidth, this.canvasHeight);
+
+					let canvasImg = new Image();
+					canvasImg.src = this.imageCanvas.toDataURL();
+					canvasImg.onload = () => {
+						this.imageObj = canvasImg;
+					};
 				};
 				img.src = this.imageSource;
-				this.imageObj = img;
+
 			},
-			reset() {
+			empty() {
 				this.points = [];
 				this.redo_list = [];
 				this.undo_list = [];
 				this.redo_pointer = [];
 				this.undo_pointer = [];
 				this.current_pointer = [];
+			},
+			reset() {
+				this.empty();
 				this.imageObj = null;
 				this.resultImage = null;
 				this.editing = 1;
@@ -153,7 +171,8 @@
 			crop: function () {
 				if (this.editing) {
 					this.current_pointer = [];
-					this.ctx.clearRect(0, 0, this.width, this.height);
+					this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+					// this.ctx.clearRect(0, 0, this.width, this.height);
 					this.ctx.beginPath();
 					this.ctx.globalCompositeOperation = 'destination-over';
 					let left = this.imageCanvas.offsetLeft;
@@ -175,13 +194,13 @@
 					this.editing = 0;
 					let img = new Image();
 					img.onload = () => {
-						this.width = img.width;
-						this.height = img.height;
 						this.ctx.canvas.width = img.width;
 						this.ctx.canvas.height = img.height;
 						this.ctx.drawImage(img, 0, 0);
+						// this.ctx.drawImage(img, 0, 0,img.width, img.height,0, 0, this.canvasWidth, this.canvasHeight)
 					};
 					img.src = dataUrl;
+					this.empty();
 				}
 
 			},
@@ -270,6 +289,12 @@
 				copy.canvas.height = trimHeight;
 				copy.putImageData(trimmed, 0, 0);
 				return copy.canvas;
+			},
+		},
+		watch: {
+			imageSource: function (val) {
+				this._initialize();
+				// this.fullName = val + ' ' + this.lastName
 			},
 		}
 	};
