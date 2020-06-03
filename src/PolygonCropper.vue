@@ -1,43 +1,49 @@
 <template>
-    <div ref="wrapper" class="wrapper">
-
+    <div :class="wrapperClass">
         <canvas
+                :class="canvasClass"
                 ref="canvas"
-                style="position:relative;margin-left:0px;margin-top:0px;cursor:crosshair"
                 v-on:mousedown="mouseDown"
                 v-on:mousemove="mouseMove"
-                v-on:mouseup="mouseUp"
-                v-show="condition"
+                v-show="showCanvas"
                 width="1190"
         ></canvas>
-        <span class="vue-crop-pointer" v-for="point in current_pointer" :style="{top:point.y, left:point.x}"></span>
-        <div ref="resultImage"></div>
-        <button @click.prevent="crop">Crop</button>
-        <button @click.prevent="undo">Undo</button>
-        <button @click.prevent="redo">Redo</button>
-        <button @click.prevent="reset">Reset</button>
-        <button @click.prevent="rotate(-90)">Rotate Left</button>
-        <button @click.prevent="rotate(90)">Rotate right</button>
-        <button @click.prevent="flip(true, false)">Flip H</button>
-        <button @click.prevent="flip(false, true)">Flip V</button>
+        <span :class="`vue-crop-pointer ${pointerClass}`" :style="{top:point.y, left:point.x}"
+              v-for="point in current_pointer" v-show="showPointer"></span>
     </div>
 </template>
 <script>
 	export default {
 		name: "PolygonCrop",
 		props: {
+			canvasClass: {
+				type: String,
+				default: ""
+			},
+			wrapperClass: {
+				type: String,
+				default: ""
+			},
+			pointerClass: {
+				type: String,
+				default: ""
+			},
 			imageSource: {
 				type: String,
 				default: ""
 			},
-			timeout: {
-				type: Number,
-				default: 0
+			showCanvas: {
+				type: Boolean,
+				default: true
+			},
+			showPointer: {
+				type: Boolean,
+				default: true
 			}
 		},
 		data() {
 			return {
-				condition: 1,
+				editing: 1,
 				points: [],
 				imageObj: null,
 				positionX: '',
@@ -46,7 +52,6 @@
 				oldPositionY: '',
 				height: '',
 				width: '',
-				canvas: null,
 				ctx: null,
 				imageCanvas: null,
 				redo_list: [],
@@ -54,6 +59,7 @@
 				redo_pointer: [],
 				undo_pointer: [],
 				current_pointer: [],
+				resultImage: null
 			};
 		},
 		mounted() {
@@ -69,10 +75,8 @@
 					this.height = img.height;
 					this.ctx.canvas.width = img.width;
 					this.ctx.canvas.height = img.height;
-					// this.ctx.drawImage(img, 0, 0, img.width, img.height);
 					this.ctx.drawImage(img, 0, 0);
 				};
-				// img.crossOrigin = "Anonymous";
 				img.src = this.imageSource;
 				this.imageObj = img;
 			},
@@ -84,28 +88,10 @@
 				this.undo_pointer = [];
 				this.current_pointer = [];
 				this.imageObj = null;
-				this.condition = 1
-				// this.ctx.clearRect(0, 0, this.width, this.height);
-				this._initialize()
+				this.resultImage = null;
+				this.editing = 1;
+				this._initialize();
 
-			},
-            rotate(angle) {
-	            this.ctx.clearRect(0,0,this.width,this.height);
-	            this.ctx.translate(this.width/2,this.height/2);
-	            this.ctx.rotate(2 * Math.PI *( angle/360))
-	            this.ctx.translate(-this.width/2,-this.height/2);
-	            this.ctx.drawImage(this.imageObj, 0, 0);
-            },
-			flip: function(flipH, flipV) {
-				let scaleH = flipH ? -1 : 1, // Set horizontal scale to -1 if flip horizontal
-					scaleV = flipV ? -1 : 1, // Set verical scale to -1 if flip vertical
-					posX = flipH ? this.width * -1 : 0, // Set x position to -100% if flip horizontal
-					posY = flipV ? this.height * -1 : 0; // Set y position to -100% if flip vertical
-
-				this.ctx.save(); // Save the current state
-				this.ctx.scale(scaleH, scaleV); // Set scale to flip the image
-				this.ctx.drawImage(this.imageObj, posX, posY, this.width, this.height); // draw the image
-				this.ctx.restore(); // Restore the last saved state
 			},
 			savePointer: function (point) {
 				this.redo_pointer = [];
@@ -149,58 +135,61 @@
 				}
 			},
 			undo: function () {
-				this.restoreState(this.undo_list, this.redo_list);
-				this.restorePointer(this.undo_pointer, this.redo_pointer, true);
+				if (this.editing) {
+					this.editing = 0;
+					this.restoreState(this.undo_list, this.redo_list);
+					this.restorePointer(this.undo_pointer, this.redo_pointer, true);
+					this.editing = 1;
+				}
 			},
 			redo: function () {
-				this.restoreState(this.redo_list, this.undo_list);
-				this.restorePointer(this.redo_pointer, this.undo_pointer, false);
+				if (this.editing) {
+					this.editing = 0;
+					this.restoreState(this.redo_list, this.undo_list);
+					this.restorePointer(this.redo_pointer, this.undo_pointer, false);
+					this.editing = 1;
+				}
 			},
 			crop: function () {
-				this.condition = 0;
-				let wrapper = this.$refs.wrapper;
-				let pointers = wrapper.querySelectorAll(`[class*="vue-crop-pointer"]`);
-				pointers.forEach((span) => {
-					span.parentNode.removeChild(span);
-				});
-
-				this.ctx.clearRect(0, 0, this.width, this.height);
-				this.ctx.beginPath();
-				// this.ctx.width = this.width;
-				// this.ctx.height = this.height;
-				this.ctx.globalCompositeOperation = 'destination-over';
-				//draw the polygon
-
-				let left = this.imageCanvas.offsetLeft;
-				let top = this.imageCanvas.offsetTop;
-				// let offset = $('#myCanvas').offset();
-
-
-				for (let i = 0; i < this.points.length; i += 2) {
-					let x = this.points[i];
-					let y = this.points[i + 1];
-
-					if (i === 0) {
-						this.ctx.moveTo(x - left, y - top);
-					} else {
-						this.ctx.lineTo(x - left, y - top);
+				if (this.editing) {
+					this.current_pointer = [];
+					this.ctx.clearRect(0, 0, this.width, this.height);
+					this.ctx.beginPath();
+					this.ctx.globalCompositeOperation = 'destination-over';
+					let left = this.imageCanvas.offsetLeft;
+					let top = this.imageCanvas.offsetTop;
+					for (let i = 0; i < this.points.length; i += 2) {
+						let x = this.points[i];
+						let y = this.points[i + 1];
+						if (i === 0) {
+							this.ctx.moveTo(x - left, y - top);
+						} else {
+							this.ctx.lineTo(x - left, y - top);
+						}
 					}
+					this.ctx.fillStyle = this.ctx.createPattern(this.imageObj, "repeat");
+					this.ctx.fill();
+					let trimmedCanvas = this.trimEmptyPixel(this.imageCanvas, this.ctx);
+					let dataUrl = trimmedCanvas.toDataURL("image/png");
+					this.resultImage = dataUrl;
+					this.editing = 0;
+					let img = new Image();
+					img.onload = () => {
+						this.width = img.width;
+						this.height = img.height;
+						this.ctx.canvas.width = img.width;
+						this.ctx.canvas.height = img.height;
+						this.ctx.drawImage(img, 0, 0);
+					};
+					img.src = dataUrl;
 				}
-				this.ctx.fillStyle = this.ctx.createPattern(this.imageObj, "repeat");
-				this.ctx.fill();
-				let trimmedCanvas = this.trimCanvas(this.imageCanvas, this.ctx);
-				let dataUrl = trimmedCanvas.toDataURL("image/png");
-				this.$refs.resultImage.innerHTML = `<img src="${dataUrl}"/>`;
-			},
-			mouseUp: function (e) {
+
 			},
 			mouseDown: function (e) {
-				if (this.condition === 1) {
+				if (this.editing === 1) {
 					if (e.which === 1) {
-						//store the points on mousedown
+						//store the points if mousedown
 						this.points.push(e.pageX, e.pageY);
-						// this.ctx.globalCompositeOperation = 'destination-out';
-
 						if (this.oldPositionX !== '' && this.undo_list.length > 0) {
 							this.ctx.beginPath();
 							this.ctx.moveTo(this.oldPositionX, this.oldPositionY);
@@ -221,19 +210,17 @@
 						this.oldPositionX = e.offsetX;
 						this.oldPositionY = e.offsetY;
 					}
-					// wrapperRef.append(pointer);
 					this.positionX = e.offsetX;
 					this.positionY = e.offsetY;
 				}
 			},
 			mouseMove: function (e) {
-				// console.log(e.offsetX, e.offsetY)
-				if (this.condition === 1) {
+				if (this.editing === 1) {
 					this.positionX = e.offsetX;
 					this.positionY = e.offsetY;
 				}
 			},
-			trimCanvas: function (c, ctx) {
+			trimEmptyPixel: function (c, ctx) {
 				let copy = document.createElement('canvas').getContext('2d'),
 					pixels = ctx.getImageData(0, 0, c.width, c.height),
 					l = pixels.data.length,
@@ -245,9 +232,6 @@
 						bottom: null
 					},
 					x, y;
-
-				// Iterate over every pixel to find the highest
-				// and where it ends on every axis ()
 				for (i = 0; i < l; i += 4) {
 					if (pixels.data[i + 3] !== 0) {
 						x = (i / 4) % c.width;
@@ -285,21 +269,12 @@
 				copy.canvas.width = trimWidth;
 				copy.canvas.height = trimHeight;
 				copy.putImageData(trimmed, 0, 0);
-
-				// Return trimmed canvas
 				return copy.canvas;
 			},
 		}
 	};
 </script>
 <style>
-    .wrapper {
-        /*margin: auto;*/
-        /*width: 100vh;*/
-        /*max-width: 100vw;*/
-        /*min-width: 500px;*/
-    }
-
     .vue-crop-pointer {
         border: solid 1px #000;
         filter: alpha(opacity=50);
@@ -307,5 +282,12 @@
         position: absolute;
         width: 5px;
         height: 5px;
+    }
+
+    canvas {
+        position: relative;
+        margin-left: 0px;
+        margin-top: 0px;
+        cursor: crosshair
     }
 </style>

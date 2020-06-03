@@ -1,5 +1,7 @@
 <template>
     <div id="app">
+
+
         <polygon-crop :imageSource="'/demo.png'" ref="canvas"></polygon-crop>
         <button @click.prevent="crop">Crop</button>
         <button @click.prevent="undo">Undo</button>
@@ -14,19 +16,19 @@
 		name: 'App',
 		methods: {
 			crop: function () {
-                this.$refs.canvas.crop()
+				this.$refs.canvas.crop();
 			},
 			undo: function () {
-				this.$refs.canvas.undo()
+				this.$refs.canvas.undo();
 			},
 			redo: function () {
-				this.$refs.canvas.redo()
+				this.$refs.canvas.redo();
 			},
 			reset: function () {
-				this.$refs.canvas.reset()
+				this.$refs.canvas.reset();
 			}
 		}
-	}
+	};
 </script>
 
 <style>
