@@ -1,3 +1,5 @@
 module.exports = {
-	publicPath: '/vue-polygon-cropper/'
+	publicPath: process.env.NODE_ENV === 'production'
+		? '/vue-polygon-cropper/'
+		: '/'
 }
