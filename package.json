@@ -1,7 +1,7 @@
 {
   "name": "vue-polygon-cropper",
   "version": "0.1.0",
-  "homepage": "/vue-polygon-cropper/",
+  "homepage": "gobeam.github.io/vue-polygon-cropper/",
   "main": "dist/PolygonCropper.umd.js",
   "module": "dist/PolygonCropper.esm.js",
   "unpkg": "dist/PolygonCropper.min.js",
