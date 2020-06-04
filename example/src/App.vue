@@ -42,8 +42,8 @@
     </div>
 </template>
 <script>
-	import polygonCrop from '../../dist/PolygonCropper.umd';
-	// import polygonCrop from 'vue-polygon-cropper';
+	// import polygonCrop from '../../dist/PolygonCropper.umd';
+	import polygonCrop from 'vue-polygon-cropper';
 
 	export default {
 		name: 'App',
