@@ -3,6 +3,9 @@ Vue polygon cropper lets you to crop image with any numbers of points with redo 
 
 [![NPM](https://nodei.co/npm/vue-polygon-cropper.png?downloads=true)](https://nodei.co/npm/vue-polygon-cropper/)
 
+
+![](demo.gif)
+
 ## Installation
 
 ```shell
