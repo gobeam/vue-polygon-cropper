@@ -3,6 +3,9 @@
         <h1 class="mb-4 mt-2 alert-success">Vue Image Cropper</h1>
         <div>
             <b-img :src="resultImage" alt="Responsive image" fluid v-show="showResult"></b-img>
+            <div v-show="showResult">
+                <b-link :href="resultImage" download="result.png">Download Image</b-link>
+            </div>
         </div>
         <div>
             <polygonCrop :canvasClass="'some-class'"
@@ -57,7 +60,6 @@
 		components: {
 			polygonCrop
 		},
-
 		methods: {
 			setImage(e) {
 				const file = e.target.files[0];
