@@ -1,24 +1,30 @@
 <template>
     <div id="app">
+        <h1 class="mb-4 mt-2 alert-success" >Vue Image Cropper</h1>
         <div>
-            <b-img :src="resultImage" alt="Responsive image" fluid></b-img>
+            <b-img :src="resultImage" alt="Responsive image" fluid v-show="!show"></b-img>
         </div>
         <div>
-            <polygonCrop :canvasClass="'img-fluid'" :imageSource="imgSrc" :showCanvas="show" :showPointer="showPointer"
+            <polygonCrop :canvasClass="'some-class'" :height="600" :imageSource="imgSrc" :showCanvas="show"
+                         :showPointer="showPointer" :width="800"
                          ref="canvas"></polygonCrop>
         </div>
         <b-row>
             <b-col>
-                <b-form-file
-                        :state="Boolean(file)"
-                        @change="setImage"
-                        drop-placeholder="Drop file here..."
-                        placeholder="Choose a file or drop it here..."
-                        v-model="file"
-                ></b-form-file>
-                <div class="mt-3">Selected file: {{ file ? file.name : '' }}</div>
-            </b-col>
-            <b-col>
+                <b-form-group>
+                    <b-form-file
+                            :state="Boolean(file)"
+                            @change="setImage"
+                            accept="image/*"
+                            class="col-sm-6 mt-2"
+                            drop-placeholder="Drop file here..."
+                            placeholder="Choose a file or drop it here..."
+                            size="lg"
+                            v-model="file"
+                    ></b-form-file>
+                    <div class="mt-3">Selected file: {{ file ? file.name : '' }}</div>
+                </b-form-group>
+
                 <b-button @click.prevent="crop" variant="success">Crop</b-button>
                 <b-button @click.prevent="undo" variant="warning">Undo</b-button>
                 <b-button @click.prevent="redo" variant="primary">Redo</b-button>
@@ -28,8 +34,8 @@
     </div>
 </template>
 <script>
-	import polygonCrop from '../../dist/PolygonCropper.umd';
-	// import polygonCrop from 'vue-polygon-cropper';
+	// import polygonCrop from '../../dist/PolygonCropper.umd';
+	import polygonCrop from 'vue-polygon-cropper';
 
 	export default {
 		name: 'App',
@@ -49,7 +55,7 @@
 		methods: {
 			setImage(e) {
 				const file = e.target.files[0];
-				if (file.type.indexOf('image/') === -1) {
+				if (!file && file.type.indexOf('image/') === -1) {
 					alert('Please select an image file');
 					return;
 				}
@@ -66,6 +72,7 @@
 			crop: function () {
 				this.$refs.canvas.crop();
 				this.resultImage = this.$refs.canvas.resultImage;
+				this.show = false;
 			},
 			undo: function () {
 				this.$refs.canvas.undo();
@@ -74,6 +81,7 @@
 				this.$refs.canvas.redo();
 			},
 			reset: function () {
+				this.show = true;
 				this.$refs.canvas.reset();
 			}
 		}
@@ -88,5 +96,8 @@
         text-align: center;
         color: #2c3e50;
         margin-top: 60px;
+    }
+    .some-class {
+        border: 1px solid #2c3e50;
     }
 </style>

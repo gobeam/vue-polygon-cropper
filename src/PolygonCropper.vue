@@ -2,15 +2,13 @@
     <div :class="wrapperClass">
         <canvas
                 :class="canvasClass"
-                :height="canvasHeight"
-                :width="canvasWidth"
                 ref="canvas"
                 v-on:mousedown="mouseDown"
                 v-on:mousemove="mouseMove"
                 v-show="showCanvas"
         ></canvas>
         <span :class="`vue-crop-pointer ${pointerClass}`" :style="{top:point.y, left:point.x}"
-              v-for="point in current_pointer" v-show="showPointer"></span>
+              v-for="point in currentPointer" v-show="showPointer"></span>
     </div>
 </template>
 <script>
@@ -21,13 +19,13 @@
 				type: String,
 				default: ""
 			},
-			canvasWidth: {
+			width: {
 				type: Number,
-				default: 400
+				default: 0
 			},
-			canvasHeight: {
+			height: {
 				type: Number,
-				default: 600
+				default: 0
 			},
 			wrapperClass: {
 				type: String,
@@ -53,22 +51,24 @@
 		data() {
 			return {
 				editing: 1,
-				points: [],
 				imageObj: null,
 				positionX: '',
 				positionY: '',
 				oldPositionX: '',
 				oldPositionY: '',
-				height: '',
-				width: '',
 				ctx: null,
 				imageCanvas: null,
-				redo_list: [],
-				undo_list: [],
-				redo_pointer: [],
-				undo_pointer: [],
-				current_pointer: [],
-				resultImage: null
+				redoMarks: [],
+				undoMarks: [],
+				currentMarks: [],
+				redoList: [],
+				undoList: [],
+				redoPointer: [],
+				undoPointer: [],
+				currentPointer: [],
+				resultImage: null,
+				imgWidth: 0,
+				imgHeight: 0
 			};
 		},
 		mounted() {
@@ -80,11 +80,11 @@
 				this.ctx = this.imageCanvas.getContext("2d");
 				let img = new Image();
 				img.onload = () => {
-					this.width = img.width;
-					this.height = img.height;
-					this.ctx.canvas.width = img.width;
-					this.ctx.canvas.height = img.height;
-					this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, this.canvasWidth, this.canvasHeight);
+					this.imgWidth = this.width > 0 ? this.width : img.width;
+					this.imgHeight = this.height > 0 ? this.height : img.height;
+					this.ctx.canvas.width = this.imgWidth;
+					this.ctx.canvas.height = this.imgHeight;
+					this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, this.imgWidth, this.imgHeight);
 
 					let canvasImg = new Image();
 					canvasImg.src = this.imageCanvas.toDataURL();
@@ -95,26 +95,27 @@
 				img.src = this.imageSource;
 
 			},
-			empty() {
-				this.points = [];
-				this.redo_list = [];
-				this.undo_list = [];
-				this.redo_pointer = [];
-				this.undo_pointer = [];
-				this.current_pointer = [];
+			empty: function () {
+				this.redoList = [];
+				this.undoList = [];
+				this.redoPointer = [];
+				this.undoPointer = [];
+				this.currentPointer = [];
+				this.redoMarks = [];
+				this.undoMarks = [];
+				this.currentMarks = [];
 			},
-			reset() {
+			reset: function () {
 				this.empty();
 				this.imageObj = null;
 				this.resultImage = null;
 				this.editing = 1;
 				this._initialize();
-
 			},
 			savePointer: function (point) {
-				this.redo_pointer = [];
-				this.current_pointer.push(point);
-				this.undo_pointer.push(point);
+				this.redoPointer = [];
+				this.currentPointer.push(point);
+				this.undoPointer.push(point);
 			},
 			restorePointer: function (pop, push, undo) {
 				if (pop.length > 0) {
@@ -123,31 +124,42 @@
 					if (undo) {
 						this.oldPositionX = item.positionX;
 						this.oldPositionY = item.positionY;
-						this.current_pointer.pop();
+						this.currentPointer.pop();
 					} else {
-						if (this.redo_pointer.length > 0) {
-							this.oldPositionX = this.redo_pointer[this.redo_pointer.length - 1]['positionX'];
-							this.oldPositionY = this.redo_pointer[this.redo_pointer.length - 1]['positionY'];
+						if (this.redoPointer.length > 0) {
+							this.oldPositionX = this.redoPointer[this.redoPointer.length - 1]['positionX'];
+							this.oldPositionY = this.redoPointer[this.redoPointer.length - 1]['positionY'];
 						}
-						this.current_pointer.push(item);
+						this.currentPointer.push(item);
 					}
 				}
 			},
-			saveState: function (canvas, list, keep_redo) {
-				keep_redo = keep_redo || false;
-				if (!keep_redo) {
-					this.redo_list = [];
+			restoreMarks: function (pop, push, undo) {
+				if (pop.length > 1) {
+					let item = pop.splice(pop.length - 2, 2);
+					push.push(...item);
+					if (undo) {
+						this.currentMarks.splice(pop.length - 2, 2);
+					} else {
+						this.currentMarks.push(...item);
+					}
 				}
-				(list || this.undo_list).push(canvas.toDataURL());
+			},
+			saveState: function (canvas, list, keepRedo) {
+				keepRedo = keepRedo || false;
+				if (!keepRedo) {
+					this.redoList = [];
+				}
+				(list || this.undoList).push(canvas.toDataURL());
 			},
 			restoreState: function (pop, push) {
 				if (pop.length) {
 					this.saveState(this.imageCanvas, push, true);
-					let restore_state = pop.pop();
+					let restoreState = pop.pop();
 					let img = new Image();
-					img.src = restore_state;
+					img.src = restoreState;
 					img.onload = () => {
-						this.ctx.clearRect(0, 0, this.width, this.height);
+						this.ctx.clearRect(0, 0, this.imgWidth, this.imgHeight);
 						this.ctx.drawImage(img, 0, 0);
 					};
 				}
@@ -155,31 +167,32 @@
 			undo: function () {
 				if (this.editing) {
 					this.editing = 0;
-					this.restoreState(this.undo_list, this.redo_list);
-					this.restorePointer(this.undo_pointer, this.redo_pointer, true);
+					this.restoreState(this.undoList, this.redoList);
+					this.restorePointer(this.undoPointer, this.redoPointer, true);
+					this.restoreMarks(this.undoMarks, this.redoMarks, true);
 					this.editing = 1;
 				}
 			},
 			redo: function () {
 				if (this.editing) {
 					this.editing = 0;
-					this.restoreState(this.redo_list, this.undo_list);
-					this.restorePointer(this.redo_pointer, this.undo_pointer, false);
+					this.restoreState(this.redoList, this.undoList);
+					this.restorePointer(this.redoPointer, this.undoPointer, false);
+					this.restoreMarks(this.redoMarks, this.undoMarks, false);
 					this.editing = 1;
 				}
 			},
 			crop: function () {
 				if (this.editing) {
-					this.current_pointer = [];
-					this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-					// this.ctx.clearRect(0, 0, this.width, this.height);
+					this.currentPointer = [];
+					this.ctx.clearRect(0, 0, this.imgWidth, this.imgHeight);
 					this.ctx.beginPath();
 					this.ctx.globalCompositeOperation = 'destination-over';
 					let left = this.imageCanvas.offsetLeft;
 					let top = this.imageCanvas.offsetTop;
-					for (let i = 0; i < this.points.length; i += 2) {
-						let x = this.points[i];
-						let y = this.points[i + 1];
+					for (let i = 0; i < this.currentMarks.length; i += 2) {
+						let x = this.currentMarks[i];
+						let y = this.currentMarks[i + 1];
 						if (i === 0) {
 							this.ctx.moveTo(x - left, y - top);
 						} else {
@@ -197,7 +210,6 @@
 						this.ctx.canvas.width = img.width;
 						this.ctx.canvas.height = img.height;
 						this.ctx.drawImage(img, 0, 0);
-						// this.ctx.drawImage(img, 0, 0,img.width, img.height,0, 0, this.canvasWidth, this.canvasHeight)
 					};
 					img.src = dataUrl;
 					this.empty();
@@ -208,8 +220,7 @@
 				if (this.editing === 1) {
 					if (e.which === 1) {
 						//store the points if mousedown
-						this.points.push(e.pageX, e.pageY);
-						if (this.oldPositionX !== '' && this.undo_list.length > 0) {
+						if (this.oldPositionX !== '' && this.undoList.length > 0) {
 							this.ctx.beginPath();
 							this.ctx.moveTo(this.oldPositionX, this.oldPositionY);
 							this.ctx.lineTo(this.positionX, this.positionY);
@@ -218,6 +229,9 @@
 							this.ctx.setLineDash([1, 1]);
 							this.ctx.stroke();
 						}
+						this.redoMarks = [];
+						this.currentMarks.push(e.pageX, e.pageY);
+						this.undoMarks.push(e.pageX, e.pageY);
 						this.saveState(this.imageCanvas);
 						this.savePointer({
 							x: e.pageX + 'px',
@@ -293,11 +307,13 @@
 		},
 		watch: {
 			imageSource: function (val) {
+				this.empty();
 				this._initialize();
 				// this.fullName = val + ' ' + this.lastName
 			},
 		}
 	};
+
 </script>
 <style>
     .vue-crop-pointer {

@@ -67,6 +67,8 @@ export default {
 | pointerClass | String  | optional | Pass class to pointer to load your custom style and customize it. |
 | showCanvas   | Boolean | optional | Default true but pass false in order to hide image canvas.        |
 | showPointer  | Boolean | optional | Default true but pass false in order to hide pointers.            |
+| width        | Number  | optional | Pass width to canvas.                                             |
+| height       | Number  | optional | Pass height to canvas.                                            |
 
 
 ## Contributing
