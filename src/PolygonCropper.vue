@@ -309,7 +309,6 @@
 			imageSource: function (val) {
 				this.empty();
 				this._initialize();
-				// this.fullName = val + ' ' + this.lastName
 			},
 		}
 	};

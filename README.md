@@ -8,6 +8,19 @@ Vue polygon cropper lets you to crop image with any numbers of points with redo 
 ```shell
 npm install --save vue-polygon-cropper
 ```
+or with yarn
+
+```shell
+yarn add vue-polygon-cropper
+```
+
+## Demo
+
+Checkout here **[gobeam.github.io/vue-polygon-cropper/](https://gobeam.github.io/vue-polygon-cropper/)**
+
+## Example
+
+Full Example with implementation here **[Example](https://github.com/gobeam/vue-polygon-cropper/tree/master/example)**
 
 ## Usage
 
@@ -61,7 +74,7 @@ export default {
 
 | Name         | Type    | Required | Description                                                       |
 |--------------|---------|----------|-------------------------------------------------------------------|
-| imageSource  | String  | required | Image url/source to load on canvas.                               |
+| imageSource  | String  | required | Image url or base64 to load on canvas.                            |
 | canvasClass  | String  | optional | Pass class to canvas to load your custom style.                   |
 | wrapperClass | String  | optional | Pass class to div wrapper of canvas to load your custom style.    |
 | pointerClass | String  | optional | Pass class to pointer to load your custom style and customize it. |

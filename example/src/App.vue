@@ -2,7 +2,7 @@
     <div id="app">
         <h1 class="mb-4 mt-2 alert-success" >Vue Image Cropper</h1>
         <div>
-            <b-img :src="resultImage" alt="Responsive image" fluid v-show="!show"></b-img>
+            <b-img :src="resultImage" alt="Responsive image" fluid v-show="showResult"></b-img>
         </div>
         <div>
             <polygonCrop :canvasClass="'some-class'" :height="600" :imageSource="imgSrc" :showCanvas="show"
@@ -34,7 +34,6 @@
     </div>
 </template>
 <script>
-	// import polygonCrop from '../../dist/PolygonCropper.umd';
 	import polygonCrop from 'vue-polygon-cropper';
 
 	export default {
@@ -43,7 +42,8 @@
 			return {
 				imgSrc: '/demo.png',
 				file: null,
-				show: true,
+				show: false,
+				showResult: false,
 				showPointer: true,
 				resultImage: ""
 			};
@@ -63,6 +63,7 @@
 					const reader = new FileReader();
 					reader.onload = (event) => {
 						this.imgSrc = event.target.result;
+						this.show = true
 					};
 					reader.readAsDataURL(file);
 				} else {
@@ -73,6 +74,7 @@
 				this.$refs.canvas.crop();
 				this.resultImage = this.$refs.canvas.resultImage;
 				this.show = false;
+				this.showResult = true;
 			},
 			undo: function () {
 				this.$refs.canvas.undo();
@@ -82,6 +84,7 @@
 			},
 			reset: function () {
 				this.show = true;
+				this.showResult = false;
 				this.$refs.canvas.reset();
 			}
 		}
