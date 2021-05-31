@@ -1,6 +1,6 @@
 {
   "name": "vue-polygon-cropper",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "homepage": "gobeam.github.io/vue-polygon-cropper/",
   "main": "dist/PolygonCropper.umd.js",
   "module": "dist/PolygonCropper.esm.js",
@@ -54,7 +54,7 @@
     "rollup-plugin-commonjs": "^9.3.4",
     "rollup-plugin-replace": "^2.2.0",
     "rollup-plugin-uglify-es": "0.0.1",
-    "rollup-plugin-vue": "^4.7.2",
+    "rollup-plugin-vue": "^5.0.0",
     "vue": "^2.6.11",
     "vue-template-compiler": "^2.6.10",
     "vue-eslint-parser": "^7.1.0",
